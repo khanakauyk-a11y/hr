@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Org Chart{% endblock %}
+
+{% block content %}
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="card p-4">
+        <h1 class="h5 mb-2">Your profile</h1>
+        <div class="muted small">Employee ID</div>
+        <div class="fw-semibold">{{ employee.employee_id }}</div>
+        <div class="muted small mt-2">Name</div>
+        <div class="fw-semibold">{{ employee.full_name }}</div>
+        <div class="muted small mt-2">Role</div>
+        <div><span class="badge text-bg-light border badge-role">{{ employee.get_role_display }}</span></div>
+
+        <hr class="my-3" />
+
+        <div class="muted small">Reporting manager</div>
+        {% if manager %}
+          <div class="fw-semibold">{{ manager.full_name }}</div>
+          <div class="text-muted">({{ manager.employee_id }})</div>
+        {% else %}
+          <div class="text-muted">None</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h5 m-0">Your team tree</h2>
+          {% if employee.role == "ADMIN" %}
+            <a class="btn btn-sm btn-primary" href="{% url 'admin_home' %}">Admin Portal</a>
+          {% endif %}
+        </div>
+        <p class="muted mb-3">
+          Managers and team leads can see their own subtree. Regular employees see only themselves and their manager.
+        </p>
+
+        {% if tree %}
+          <div class="tree">
+            <ul class="p-0">
+              {% include "org/_tree.html" with node=tree %}
+            </ul>
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-0">No team hierarchy to display.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

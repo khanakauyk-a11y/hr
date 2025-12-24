@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Employees{% endblock %}
+
+{% block content %}
+  <div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h1 class="h4 mb-1">Employees</h1>
+        <div class="muted">Add, edit, delete, assign reporting managers, and reset passwords.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'admin_home' %}">Admin Home</a>
+        <a class="btn btn-primary" href="{% url 'employee_create' %}">Add employee</a>
+      </div>
+    </div>
+
+    <form class="row g-2 mt-3" method="get">
+      <div class="col-sm-8 col-md-6">
+        <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search by ID or name" />
+      </div>
+      <div class="col-sm-4 col-md-2">
+        <button class="btn btn-outline-primary w-100" type="submit">Search</button>
+      </div>
+    </form>
+
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Reporting manager</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in employees %}
+            <tr>
+              <td><code>{{ e.employee_id }}</code></td>
+              <td>{{ e.full_name }}</td>
+              <td><span class="badge text-bg-light border badge-role">{{ e.get_role_display }}</span></td>
+              <td>
+                {% if e.reporting_manager %}
+                  {{ e.reporting_manager.full_name }} <span class="text-muted">({{ e.reporting_manager.employee_id }})</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if e.is_active %}
+                  <span class="badge text-bg-success">Active</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'employee_edit' e.id %}">Edit</a>
+                <a class="btn btn-sm btn-outline-warning" href="{% url 'employee_reset_password' e.id %}">Reset password</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'employee_delete' e.id %}">Delete</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-muted">No employees found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+

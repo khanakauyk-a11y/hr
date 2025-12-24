@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == "create" %}Add employee{% else %}Edit employee{% endif %}{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h1 class="h4 mb-1">
+              {% if mode == "create" %}Add employee{% else %}Edit employee{% endif %}
+            </h1>
+            {% if mode == "create" %}
+              <div class="muted">Creates a new login with the default password.</div>
+            {% endif %}
+          </div>
+          <a class="btn btn-outline-secondary" href="{% url 'employee_list' %}">Back</a>
+        </div>
+
+        <hr class="my-3" />
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<div class="text-muted small">{{ field.help_text }}</div>{% endif %}
+              {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+            </div>
+          {% endfor %}
+
+          <button class="btn btn-primary" type="submit">
+            {% if mode == "create" %}Create{% else %}Save changes{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

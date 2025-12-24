@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title|default:"Login" }}{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card p-4">
+        <h1 class="h4 mb-1">{{ title|default:"Login" }}</h1>
+        <p class="muted mb-4">Use your Employee ID and password.</p>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+            {{ form.username }}
+            {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+            {{ form.password }}
+            {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors }}</div>{% endif %}
+          </div>
+
+          <button class="btn btn-primary w-100" type="submit">Sign in</button>
+        </form>
+
+        <div class="mt-3 small muted">
+          {% if title == "Admin Login" %}
+            Not an admin? <a href="{% url 'login' %}">User Login</a>
+          {% else %}
+            Admin? <a href="{% url 'admin_login' %}">Admin Login</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

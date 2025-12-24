@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}HR Portal{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card p-4">
+        <h1 class="h3 mb-2">Welcome</h1>
+        <p class="muted mb-4">
+          This portal supports Admin and User logins, plus a reporting hierarchy so managers/team leads see only
+          their own teams.
+        </p>
+
+        <div class="d-flex gap-2 flex-wrap">
+          <a class="btn btn-primary" href="{% url 'login' %}">User Login</a>
+          <a class="btn btn-outline-primary" href="{% url 'admin_login' %}">Admin Login</a>
+          <a class="btn btn-outline-secondary" href="{% url 'admin:index' %}">Django Admin (optional)</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+

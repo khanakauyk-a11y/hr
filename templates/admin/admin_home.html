@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Portal{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <h1 class="h4 mb-1">Admin Portal</h1>
+            <div class="muted">Create employees, assign reporting managers, and manage accounts.</div>
+          </div>
+          <a class="btn btn-primary" href="{% url 'employee_list' %}">Manage Employees</a>
+        </div>
+
+        <hr class="my-3" />
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="p-3 bg-light border rounded">
+              <div class="fw-semibold">Default password</div>
+              <div class="text-muted small">When you create/reset an employee, this password is assigned.</div>
+              <div class="mt-2"><code>{{ default_password }}</code></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="p-3 bg-light border rounded">
+              <div class="fw-semibold">Hierarchy rules</div>
+              <div class="text-muted small">
+                A manager/team lead sees only their subtree. Regular employees see themselves + their manager.
+              </div>
+              <div class="mt-2">
+                <a href="{% url 'org_chart' %}">View org chart as your account</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+
