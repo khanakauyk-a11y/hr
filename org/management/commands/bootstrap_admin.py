@@ -36,7 +36,8 @@ class Command(BaseCommand):
             raise CommandError("--name is required")
 
         if User.objects.filter(username=employee_id).exists():
-            raise CommandError(f"User '{employee_id}' already exists.")
+            self.stdout.write(self.style.SUCCESS(f"User '{employee_id}' already exists. Skipping creation."))
+            return
 
         if not password:
             password = settings.HR_DEFAULT_PASSWORD
