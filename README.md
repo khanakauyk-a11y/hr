@@ -255,6 +255,15 @@ bash start.sh
 
 ### 5) First admin account
 
+Option A (recommended): auto-create admin on deploy by setting these variables on the **hr** service:
+- `HR_BOOTSTRAP_ADMIN_ID` = `1001`
+- `HR_BOOTSTRAP_ADMIN_NAME` = `HR Admin` (optional)
+- `HR_BOOTSTRAP_ADMIN_PASSWORD` = (optional; if not set, uses `HR_DEFAULT_PASSWORD`)
+
+Then redeploy. The container will run `bootstrap_admin` automatically (and skip if it already exists).
+
+Option B: manually create admin in Railway Shell:
+
 After first deploy, open Railway → **web service** → **Shell** and run:
 
 ```bash
