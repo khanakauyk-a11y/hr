@@ -161,6 +161,10 @@ class Employee(models.Model):
 
     def subtree_queryset(self):
         return Employee.objects.filter(id__in=self.subtree_ids()).select_related("user", "reporting_manager")
+    
+    def has_team_members(self) -> bool:
+        """Check if this employee has any team members (direct or indirect reports)"""
+        return len(self.subtree_ids()) > 1  # More than just themselves
 
     def default_password(self) -> str:
         return getattr(settings, "HR_DEFAULT_PASSWORD", "Welcome@123")

@@ -49,7 +49,7 @@
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'employee_list' %}">Manage Employees</a>
         <a class="btn btn-sm btn-outline-success" href="{% url 'generate_offer_letter' %}">Generate Offer Letter</a>
         {% endif %}
-        {% if user.employee.subtree_ids|length > 1 %}
+        {% if user.employee.has_team_members %}
         <a class="btn btn-sm btn-outline-primary" href="{% url 'manager_reports_dashboard' %}">Team Reports</a>
         {% endif %}
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'change_password' %}">Change Password</a>
