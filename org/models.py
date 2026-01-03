@@ -8,14 +8,37 @@ from django.db import models
 
 class Employee(models.Model):
     class Role(models.TextChoices):
-        ADMIN = "ADMIN", "Admin"
-        MANAGER = "MANAGER", "Manager"
-        TEAM_LEAD = "TEAM_LEAD", "Team Lead"
-        EMPLOYEE = "EMPLOYEE", "Employee"
+        # Sales Designations
+        SENIOR_SALES_MANAGER = "SENIOR_SALES_MANAGER", "Senior Sales Manager"
+        SALES_MANAGER = "SALES_MANAGER", "Sales Manager"
+        ASSISTANT_SALES_MANAGER = "ASSISTANT_SALES_MANAGER", "Assistant Sales Manager"
+        SALES_EXECUTIVE = "SALES_EXECUTIVE", "Sales Executive"
+        
+        # Agent Designations
+        AGENT_RELATIONSHIP_MANAGER = "AGENT_RELATIONSHIP_MANAGER", "Agent Relationship Manager"
+        AGENT_MANAGER = "AGENT_MANAGER", "Agent Manager"
+        AGENT = "AGENT", "Agent"
+        
+        # HR Designations
+        HR_MANAGER = "HR_MANAGER", "HR Manager"
+        HR_EXECUTIVE = "HR_EXECUTIVE", "HR Executive"
+        
+        # Management Designations
+        ASSISTANT_GENERAL_MANAGER = "ASSISTANT_GENERAL_MANAGER", "Assistant General Manager"
+        
+        # Support Designations
+        SENIOR_RETAINER = "SENIOR_RETAINER", "Senior Retainer"
+        TELE_CALLER = "TELE_CALLER", "Tele Caller"
+        TRAINER = "TRAINER", "Trainer"
+        
+        # IT Designations
+        IT_MANAGER = "IT_MANAGER", "IT Manager"
+        IT_EXECUTIVE = "IT_EXECUTIVE", "IT Executive"
+        IT_GRAPHIC_DESIGNER = "IT_GRAPHIC_DESIGNER", "IT Graphic Designer"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
     full_name = models.CharField(max_length=150)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.EMPLOYEE)
+    role = models.CharField(max_length=30, choices=Role.choices, default=Role.AGENT)
 
     # The person this employee reports to (can be null for top-level / admin accounts)
     reporting_manager = models.ForeignKey(
@@ -62,10 +85,51 @@ class Employee(models.Model):
                 cursor = cursor.reporting_manager
 
     def can_access_admin_portal(self) -> bool:
-        return self.role == self.Role.ADMIN
+        """Only HR Manager and HR Executive can access the admin portal"""
+        return self.role in {self.Role.HR_MANAGER, self.Role.HR_EXECUTIVE}
 
     def can_view_subtree(self) -> bool:
-        return self.role in {self.Role.MANAGER, self.Role.TEAM_LEAD}
+        """Manager-level positions can view their organizational subtree"""
+        return self.role in {
+            self.Role.SENIOR_SALES_MANAGER,
+            self.Role.SALES_MANAGER,
+            self.Role.ASSISTANT_SALES_MANAGER,
+            self.Role.AGENT_RELATIONSHIP_MANAGER,
+            self.Role.AGENT_MANAGER,
+            self.Role.HR_MANAGER,
+            self.Role.HR_EXECUTIVE,
+            self.Role.ASSISTANT_GENERAL_MANAGER,
+            self.Role.IT_MANAGER,
+        }
+    
+    def can_add_employees(self) -> bool:
+        """Designations with employee management permissions"""
+        return self.role in {
+            # Sales Management
+            self.Role.SENIOR_SALES_MANAGER,
+            self.Role.SALES_MANAGER,
+            self.Role.ASSISTANT_SALES_MANAGER,
+            self.Role.SALES_EXECUTIVE,  # Added
+            
+            # Agent Management
+            self.Role.AGENT_RELATIONSHIP_MANAGER,
+            self.Role.AGENT_MANAGER,
+            
+            # HR
+            self.Role.HR_MANAGER,
+            self.Role.HR_EXECUTIVE,
+            
+            # General Management
+            self.Role.ASSISTANT_GENERAL_MANAGER,
+            
+            # Support
+            self.Role.SENIOR_RETAINER,  # Added
+            
+            # IT Management & Staff
+            self.Role.IT_MANAGER,
+            self.Role.IT_EXECUTIVE,  # Added
+            self.Role.IT_GRAPHIC_DESIGNER,  # Added
+        }
 
     def subtree_ids(self) -> set[int]:
         """

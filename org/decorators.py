@@ -41,3 +41,15 @@ def admin_required(view_func):
     return _wrapped
 
 
+def can_add_employees_required(view_func):
+    """Decorator to check if the employee has permission to add/manage employees"""
+    @wraps(view_func)
+    @employee_required
+    def _wrapped(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        if request.user.employee.can_add_employees():
+            return view_func(request, *args, **kwargs)
+        messages.error(request, "You don't have permission to manage employees.")
+        return redirect("dashboard")
+
+    return _wrapped
+

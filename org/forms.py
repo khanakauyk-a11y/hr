@@ -102,3 +102,52 @@ class EmployeeUpdateForm(forms.ModelForm):
         return employee
 
 
+class OfferLetterForm(forms.Form):
+    """Form for generating offer letters"""
+    reference_number = forms.CharField(
+        max_length=100,
+        initial="EOM/HR/DP/095/25/",
+        help_text="e.g., EOM/HR/DP/095/25/711"
+    )
+    offer_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Offer Letter Date"
+    )
+    candidate_name = forms.CharField(max_length=150, label="Candidate Full Name")
+    designation = forms.ChoiceField(choices=Employee.Role.choices, label="Position/Designation")
+    department = forms.CharField(max_length=100, label="Department")
+    joining_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Date of Joining"
+    )
+    annual_salary = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        label="Annual Salary (in Rupees)",
+        help_text="Enter numeric value, e.g., 600000"
+    )
+    salary_in_words = forms.CharField(
+        max_length=200,
+        label="Salary in Words",
+        help_text="e.g., Six Lakh"
+    )
+    team_details = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3}),
+        required=False,
+        label="Team Structure Details",
+        initial="In this role, you will be responsible for recruiting four direct reportees and facilitating team growth through their leadership.",
+        help_text="Optional: Team management responsibilities"
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set default date if not provided
+        if 'offer_date' not in self.initial:
+            import datetime
+            self.initial['offer_date'] = datetime.date.today()
+        
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault("class", "form-check-input")
+            else:
+                field.widget.attrs.setdefault("class", "form-control")

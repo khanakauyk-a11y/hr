@@ -54,7 +54,7 @@ class Command(BaseCommand):
         Employee.objects.create(
             user=user,
             full_name=name,
-            role=Employee.Role.ADMIN,
+            role=Employee.Role.HR_MANAGER,
             reporting_manager=None,
             must_change_password=must_change,
             is_active=True,

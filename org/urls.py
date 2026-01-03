@@ -18,6 +18,9 @@ urlpatterns = [
     path("admin/employees/<int:pk>/edit/", views.employee_edit, name="employee_edit"),
     path("admin/employees/<int:pk>/delete/", views.employee_delete, name="employee_delete"),
     path("admin/employees/<int:pk>/reset-password/", views.employee_reset_password, name="employee_reset_password"),
+    
+    # Offer Letter
+    path("offer-letter/generate/", views.generate_offer_letter, name="generate_offer_letter"),
 ]
 
 

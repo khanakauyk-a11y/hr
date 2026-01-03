@@ -1,11 +1,13 @@
 ## HR Portal (Django)
 
-This is a simple HR portal with:
+This is a comprehensive HR portal with:
 - **Two login pages**: **Admin Login** (`/admin-login/`) and **User Login** (`/login/`)
-- **Admin role** can **add / edit / delete** employees, assign **reporting manager**, and **reset passwords**
+- **16 Professional Designations** across Sales, HR, IT, Management, and Support teams
+- **Admin role** (HR Manager & HR Executive) can access admin portal
+- **Manager-level positions** can **add / edit / delete** employees and assign **reporting managers**
 - **Hierarchy visibility**
-  - **Manager / Team Lead** can see **their own subtree** (direct + indirect reports)
-  - **Normal employee** sees **self + reporting manager**
+  - **Manager-level positions** can see **their own subtree** (direct + indirect reports)
+  - **Regular employees** see **self + reporting manager**
 - **Default password** for new users (configurable)
 
 ---
@@ -31,12 +33,20 @@ Default password is **`Welcome@123`** (change via env var `HR_DEFAULT_PASSWORD`)
 
 ## How to create employees
 
-1. Login as admin: `/admin-login/`
-2. Go to **Admin Portal → Manage Employees**
+1. Login with a manager-level account: `/login/` or admin portal at `/admin-login/`
+2. Go to **Manage Employees** (available to managers and HR roles)
 3. Add employees:
    - **Employee ID** becomes the login ID
-   - Choose **Role**: Employee / Team Lead / Manager / Admin
+   - Choose **Designation** from 16 available options:
+     - **Sales**: Senior Sales Manager, Sales Manager, Assistant Sales Manager, Sales Executive
+     - **Agent**: Agent Relationship Manager, Agent Manager, Agent
+     - **HR**: HR Manager, HR Executive
+     - **Management**: Assistant General Manager
+     - **Support**: Senior Retainer, Tele Caller, Trainer
+     - **IT**: IT Manager, IT Executive, IT Graphic Designer
    - Set **Reporting manager** to build the org hierarchy
+
+**Note:** Only manager-level positions (Sales Managers, Agent Managers, HR, IT Manager, Assistant General Manager) can add/edit employees.
 
 ---
 

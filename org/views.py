@@ -12,9 +12,10 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
-from .decorators import admin_required, employee_required
-from .forms import EmployeeCreateForm, EmployeeIdAuthenticationForm, EmployeeUpdateForm
+from .decorators import admin_required, can_add_employees_required, employee_required
+from .forms import EmployeeCreateForm, EmployeeIdAuthenticationForm, EmployeeUpdateForm, OfferLetterForm
 from .models import Employee
+from .offer_letter_pdf import generate_offer_letter_pdf
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -141,7 +142,7 @@ def admin_home(request: HttpRequest) -> HttpResponse:
     return render(request, "admin/admin_home.html", {"default_password": settings.HR_DEFAULT_PASSWORD})
 
 
-@admin_required
+@can_add_employees_required
 def employee_list(request: HttpRequest) -> HttpResponse:
     q = (request.GET.get("q") or "").strip()
     qs = Employee.objects.select_related("user", "reporting_manager")
@@ -151,7 +152,7 @@ def employee_list(request: HttpRequest) -> HttpResponse:
     return render(request, "admin/employee_list.html", {"employees": employees, "q": q})
 
 
-@admin_required
+@can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_create(request: HttpRequest) -> HttpResponse:
     form = EmployeeCreateForm(request.POST or None)
@@ -162,7 +163,7 @@ def employee_create(request: HttpRequest) -> HttpResponse:
     return render(request, "admin/employee_form.html", {"form": form, "mode": "create"})
 
 
-@admin_required
+@can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_edit(request: HttpRequest, pk: int) -> HttpResponse:
     employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
@@ -176,7 +177,7 @@ def employee_edit(request: HttpRequest, pk: int) -> HttpResponse:
     )
 
 
-@admin_required
+@can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_delete(request: HttpRequest, pk: int) -> HttpResponse:
     employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
@@ -192,7 +193,7 @@ def employee_delete(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "admin/employee_confirm_delete.html", {"employee_obj": employee})
 
 
-@admin_required
+@can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_reset_password(request: HttpRequest, pk: int) -> HttpResponse:
     employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
@@ -208,3 +209,35 @@ def employee_reset_password(request: HttpRequest, pk: int) -> HttpResponse:
         "admin/employee_confirm_reset_password.html",
         {"employee_obj": employee, "default_password": settings.HR_DEFAULT_PASSWORD},
     )
+
+
+@can_add_employees_required
+@require_http_methods(["GET", "POST"])
+def generate_offer_letter(request: HttpRequest) -> HttpResponse:
+    """Generate offer letter form and PDF download"""
+    if request.method == "POST":
+        form = OfferLetterForm(request.POST)
+        if form.is_valid():
+            # Prepare data for PDF generation
+            data = form.cleaned_data.copy()
+            # Get designation display name
+            designation_choices = dict(Employee.Role.choices)
+            data['designation_display'] = designation_choices.get(data['designation'], data['designation'])
+            # Format dates
+            data['offer_date'] = data['offer_date'].strftime('%d-%m-%Y')
+            data['joining_date'] = data['joining_date'].strftime('%B %Y')
+            # Format salary
+            data['annual_salary'] = f"{data['annual_salary']:,.2f}"
+            
+            # Generate PDF
+            pdf = generate_offer_letter_pdf(data)
+            
+            # Return PDF as download
+            response = HttpResponse(pdf, content_type='application/pdf')
+            filename = f"Offer_Letter_{data['candidate_name'].replace(' ', '_')}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+    else:
+        form = OfferLetterForm()
+    
+    return render(request, "offer_letter_form.html", {"form": form})
