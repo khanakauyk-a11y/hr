@@ -142,12 +142,23 @@ def admin_home(request: HttpRequest) -> HttpResponse:
     return render(request, "admin/admin_home.html", {"default_password": settings.HR_DEFAULT_PASSWORD})
 
 
+
 @can_add_employees_required
 def employee_list(request: HttpRequest) -> HttpResponse:
+    current_employee = request.user.employee
     q = (request.GET.get("q") or "").strip()
-    qs = Employee.objects.select_related("user", "reporting_manager")
+    
+    # HR Manager and HR Executive can see all employees
+    if current_employee.can_access_admin_portal():
+        qs = Employee.objects.select_related("user", "reporting_manager")
+    else:
+        # Other managers can only see their own subtree (team members)
+        team_ids = current_employee.subtree_ids()
+        qs = Employee.objects.filter(id__in=team_ids).select_related("user", "reporting_manager")
+    
     if q:
         qs = qs.filter(models.Q(user__username__icontains=q) | models.Q(full_name__icontains=q))
+    
     employees = qs.order_by("user__username")[:500]
     return render(request, "admin/employee_list.html", {"employees": employees, "q": q})
 
@@ -166,7 +177,15 @@ def employee_create(request: HttpRequest) -> HttpResponse:
 @can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    current_employee = request.user.employee
     employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
+    
+    # Check if current user has permission to edit this employee
+    if not current_employee.can_access_admin_portal():
+        # Non-admin managers can only edit their team members
+        if employee.id not in current_employee.subtree_ids():
+            messages.error(request, "You don't have permission to edit this employee.")
+            return redirect("employee_list")
     form = EmployeeUpdateForm(request.POST or None, instance=employee)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -180,10 +199,19 @@ def employee_edit(request: HttpRequest, pk: int) -> HttpResponse:
 @can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    current_employee = request.user.employee
     employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
+    
     if employee.user_id == request.user.id:
         messages.error(request, "You cannot delete your own account.")
         return redirect("employee_list")
+    
+    # Check if current user has permission to delete this employee
+    if not current_employee.can_access_admin_portal():
+        # Non-admin managers can only delete their team members
+        if employee.id not in current_employee.subtree_ids():
+            messages.error(request, "You don't have permission to delete this employee.")
+            return redirect("employee_list")
 
     if request.method == "POST":
         employee.user.delete()
@@ -196,7 +224,15 @@ def employee_delete(request: HttpRequest, pk: int) -> HttpResponse:
 @can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_reset_password(request: HttpRequest, pk: int) -> HttpResponse:
+    current_employee = request.user.employee
     employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
+    
+    # Check if current user has permission to reset password for this employee
+    if not current_employee.can_access_admin_portal():
+        # Non-admin managers can only reset passwords for their team members
+        if employee.id not in current_employee.subtree_ids():
+            messages.error(request, "You don't have permission to reset this employee's password.")
+            return redirect("employee_list")
     if request.method == "POST":
         employee.user.set_password(settings.HR_DEFAULT_PASSWORD)
         employee.user.save(update_fields=["password"])
