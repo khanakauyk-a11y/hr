@@ -177,6 +177,13 @@ class DailyReport(models.Model):
     tasks_completed = models.TextField(help_text="What tasks did you complete today?")
     challenges = models.TextField(blank=True, help_text="Any challenges or blockers faced?")
     next_day_plan = models.TextField(blank=True, help_text="What do you plan to work on tomorrow?")
+    
+    # Hiring and Sales Metrics
+    joining_date = models.DateField(null=True, blank=True, help_text="Joining date (if applicable)")
+    today_hiring = models.IntegerField(default=0, help_text="Number of people hired today")
+    total_hiring = models.IntegerField(default=0, help_text="Total hiring count")
+    sales = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Sales amount")
+    
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

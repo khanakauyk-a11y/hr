@@ -52,6 +52,57 @@
                         {% endif %}
                     </div>
 
+                    <hr class="my-4">
+                    <h5 class="text-primary mb-3">📊 Hiring & Sales Metrics</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.joining_date.id_for_label }}" class="form-label">
+                                {{ form.joining_date.label }}
+                            </label>
+                            {{ form.joining_date }}
+                            <small class="form-text text-muted">{{ form.joining_date.help_text }}</small>
+                            {% if form.joining_date.errors %}
+                            <div class="text-danger">{{ form.joining_date.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.today_hiring.id_for_label }}" class="form-label">
+                                {{ form.today_hiring.label }}
+                            </label>
+                            {{ form.today_hiring }}
+                            <small class="form-text text-muted">{{ form.today_hiring.help_text }}</small>
+                            {% if form.today_hiring.errors %}
+                            <div class="text-danger">{{ form.today_hiring.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.total_hiring.id_for_label }}" class="form-label">
+                                {{ form.total_hiring.label }}
+                            </label>
+                            {{ form.total_hiring }}
+                            <small class="form-text text-muted">{{ form.total_hiring.help_text }}</small>
+                            {% if form.total_hiring.errors %}
+                            <div class="text-danger">{{ form.total_hiring.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.sales.id_for_label }}" class="form-label">
+                                {{ form.sales.label }}
+                            </label>
+                            {{ form.sales }}
+                            <small class="form-text text-muted">{{ form.sales.help_text }}</small>
+                            {% if form.sales.errors %}
+                            <div class="text-danger">{{ form.sales.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="d-flex gap-2 justify-content-end mt-4">
                         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">

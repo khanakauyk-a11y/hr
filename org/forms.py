@@ -158,11 +158,15 @@ class DailyReportForm(forms.ModelForm):
     
     class Meta:
         model = DailyReport
-        fields = ['tasks_completed', 'challenges', 'next_day_plan']
+        fields = ['tasks_completed', 'challenges', 'next_day_plan', 'joining_date', 'today_hiring', 'total_hiring', 'sales']
         widgets = {
             'tasks_completed': forms.Textarea(attrs={'rows': 4, 'placeholder': 'List the tasks you completed today...'}),
             'challenges': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Any blockers or challenges? (Optional)'}),
             'next_day_plan': forms.Textarea(attrs={'rows': 3, 'placeholder': 'What do you plan to work on tomorrow? (Optional)'}),
+            'joining_date': forms.DateInput(attrs={'type': 'date', 'placeholder': 'Select joining date (Optional)'}),
+            'today_hiring': forms.NumberInput(attrs={'placeholder': 'Number of people hired today', 'min': '0'}),
+            'total_hiring': forms.NumberInput(attrs={'placeholder': 'Total hiring count', 'min': '0'}),
+            'sales': forms.NumberInput(attrs={'placeholder': 'Sales amount', 'step': '0.01', 'min': '0'}),
         }
     
     def __init__(self, *args, **kwargs):

@@ -64,6 +64,26 @@
                 </div>
                 {% endif %}
 
+                <!-- Hiring & Sales Metrics -->
+                <div class="mb-4">
+                    <h5 class="text-info">📊 Hiring & Sales Metrics</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Joining Date:</strong> {{ report.joining_date|date:"M d,
+                                        Y"|default:"-" }}</p>
+                                    <p class="mb-2"><strong>Today Hiring:</strong> {{ report.today_hiring }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Total Hiring:</strong> {{ report.total_hiring }}</p>
+                                    <p class="mb-2"><strong>Sales:</strong> ₹{{ report.sales|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{% url 'manager_reports_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
                 </div>
