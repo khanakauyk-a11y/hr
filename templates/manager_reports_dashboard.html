@@ -24,10 +24,10 @@
                 <div class="col-md-4">
                     <label for="status" class="form-label">Status Filter</label>
                     <select class="form-control" id="status" name="status">
-                        <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Team Members</option>
-                        <option value="submitted" {% if status_filter=='submitted' %}selected{% endif %}>✅ Submitted
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Team Members</option>
+                        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>✅ Submitted
                             Only</option>
-                        <option value="not_submitted" {% if status_filter=='not_submitted' %}selected{% endif %}>❌ Not
+                        <option value="not_submitted" {% if status_filter == 'not_submitted' %}selected{% endif %}>❌ Not
                             Submitted Only</option>
                     </select>
                 </div>
