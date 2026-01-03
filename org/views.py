@@ -13,9 +13,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
 from .decorators import admin_required, can_add_employees_required, employee_required
-from .forms import EmployeeCreateForm, EmployeeIdAuthenticationForm, EmployeeUpdateForm, OfferLetterForm
-from .models import Employee
+from .forms import EmployeeCreateForm, EmployeeIdAuthenticationForm, EmployeeUpdateForm, OfferLetterForm, DailyReportForm
+from .models import Employee, DailyReport
 from .offer_letter_pdf import generate_offer_letter_pdf
+from django.utils import timezone
+from datetime import date, datetime
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -277,3 +279,115 @@ def generate_offer_letter(request: HttpRequest) -> HttpResponse:
         form = OfferLetterForm()
     
     return render(request, "offer_letter_form.html", {"form": form})
+
+
+@employee_required
+@require_http_methods(["GET", "POST"])
+def submit_daily_report(request: HttpRequest) -> HttpResponse:
+    """Submit or update daily work report"""
+    current_employee = request.user.employee
+    today = date.today()
+    
+    # Get or create today's report
+    report, created = DailyReport.objects.get_or_create(
+        employee=current_employee,
+        report_date=today,
+        defaults={'tasks_completed': ''}
+    )
+    
+    if request.method == "POST":
+        form = DailyReportForm(request.POST, instance=report)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Daily report submitted successfully!")
+            return redirect("dashboard")
+    else:
+        form = DailyReportForm(instance=report)
+    
+    return render(request, "report_submit_form.html", {
+        "form": form,
+        "report_date": today,
+        "is_update": not created
+    })
+
+
+@employee_required
+def manager_reports_dashboard(request: HttpRequest) -> HttpResponse:
+    """View daily reports from team members with filtering"""
+    current_employee = request.user.employee
+    
+    # Get team members (excluding self)
+    team_ids = current_employee.subtree_ids()
+    team_ids.discard(current_employee.id)  # Remove self
+    
+    if not team_ids:
+        return render(request, "manager_reports_dashboard.html", {
+            "has_team": False,
+            "message": "You don't have any team members to view reports for."
+        })
+    
+    # Get filter parameters
+    selected_date_str = request.GET.get('date', date.today().isoformat())
+    try:
+        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        selected_date = date.today()
+    
+    status_filter = request.GET.get('status', 'all')  # all, submitted, not_submitted
+    
+    # Get all team members
+    team_members = Employee.objects.filter(id__in=team_ids).select_related('user')
+    
+    # Get reports for selected date
+    reports = DailyReport.objects.filter(
+        employee_id__in=team_ids,
+        report_date=selected_date
+    ).select_related('employee__user')
+    
+    # Create a dict of employee_id -> report
+    reports_dict = {r.employee_id: r for r in reports}
+    
+    # Build list with submission status
+    team_data = []
+    for emp in team_members:
+        report = reports_dict.get(emp.id)
+        team_data.append({
+            'employee': emp,
+            'report': report,
+            'has_submitted': report is not None
+        })
+    
+    # Apply status filter
+    if status_filter == 'submitted':
+        team_data = [t for t in team_data if t['has_submitted']]
+    elif status_filter == 'not_submitted':
+        team_data = [t for t in team_data if not t['has_submitted']]
+    
+    # Calculate stats
+    total_team = len(team_members)
+    submitted_count = len([t for t in team_data if t['has_submitted']])
+    
+    return render(request, "manager_reports_dashboard.html", {
+        "has_team": True,
+        "team_data": team_data,
+        "selected_date": selected_date,
+        "status_filter": status_filter,
+        "total_team": total_team,
+        "submitted_count": submitted_count,
+        "not_submitted_count": total_team - submitted_count,
+    })
+
+
+@employee_required
+def view_report_detail(request: HttpRequest, pk: int) -> HttpResponse:
+    """View detailed daily report"""
+    current_employee = request.user.employee
+    report = get_object_or_404(DailyReport.objects.select_related('employee__user'), pk=pk)
+    
+    # Check permission: Can only view reports from team members
+    team_ids = current_employee.subtree_ids()
+    if report.employee_id not in team_ids:
+        messages.error(request, "You don't have permission to view this report.")
+        return redirect("manager_reports_dashboard")
+    
+    return render(request, "report_detail.html", {"report": report})

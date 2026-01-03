@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Employee(models.Model):
@@ -163,3 +164,23 @@ class Employee(models.Model):
 
     def default_password(self) -> str:
         return getattr(settings, "HR_DEFAULT_PASSWORD", "Welcome@123")
+
+
+class DailyReport(models.Model):
+    """Daily work report submitted by employees"""
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='daily_reports')
+    report_date = models.DateField(default=timezone.now)
+    tasks_completed = models.TextField(help_text="What tasks did you complete today?")
+    challenges = models.TextField(blank=True, help_text="Any challenges or blockers faced?")
+    next_day_plan = models.TextField(blank=True, help_text="What do you plan to work on tomorrow?")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = [['employee', 'report_date']]
+        ordering = ['-report_date', 'employee']
+        verbose_name = "Daily Report"
+        verbose_name_plural = "Daily Reports"
+    
+    def __str__(self):
+        return f"{self.employee.full_name} - {self.report_date}"

@@ -21,6 +21,11 @@ urlpatterns = [
     
     # Offer Letter
     path("offer-letter/generate/", views.generate_offer_letter, name="generate_offer_letter"),
+    
+    # Daily Reports
+    path("report/submit/", views.submit_daily_report, name="submit_daily_report"),
+    path("reports/dashboard/", views.manager_reports_dashboard, name="manager_reports_dashboard"),
+    path("reports/<int:pk>/", views.view_report_detail, name="view_report_detail"),
 ]
 
 

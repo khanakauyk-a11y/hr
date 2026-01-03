@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from .models import Employee
+from .models import Employee, DailyReport
 
 
 class EmployeeIdAuthenticationForm(AuthenticationForm):
@@ -151,3 +151,21 @@ class OfferLetterForm(forms.Form):
                 field.widget.attrs.setdefault("class", "form-check-input")
             else:
                 field.widget.attrs.setdefault("class", "form-control")
+
+
+class DailyReportForm(forms.ModelForm):
+    """Form for submitting daily work reports"""
+    
+    class Meta:
+        model = DailyReport
+        fields = ['tasks_completed', 'challenges', 'next_day_plan']
+        widgets = {
+            'tasks_completed': forms.Textarea(attrs={'rows': 4, 'placeholder': 'List the tasks you completed today...'}),
+            'challenges': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Any blockers or challenges? (Optional)'}),
+            'next_day_plan': forms.Textarea(attrs={'rows': 3, 'placeholder': 'What do you plan to work on tomorrow? (Optional)'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            field.widget.attrs.setdefault("class", "form-control")

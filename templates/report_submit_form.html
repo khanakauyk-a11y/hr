@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Daily Report{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">📝 Daily Work Report - {{ report_date|date:"F d, Y" }}</h4>
+            </div>
+            <div class="card-body">
+                {% if is_update %}
+                <div class="alert alert-info">
+                    <strong>ℹ️ Note:</strong> You've already submitted a report for today. You can update it below.
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.tasks_completed.id_for_label }}" class="form-label">
+                            {{ form.tasks_completed.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.tasks_completed }}
+                        <small class="form-text text-muted">{{ form.tasks_completed.help_text }}</small>
+                        {% if form.tasks_completed.errors %}
+                        <div class="text-danger">{{ form.tasks_completed.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.challenges.id_for_label }}" class="form-label">
+                            {{ form.challenges.label }}
+                        </label>
+                        {{ form.challenges }}
+                        <small class="form-text text-muted">{{ form.challenges.help_text }}</small>
+                        {% if form.challenges.errors %}
+                        <div class="text-danger">{{ form.challenges.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.next_day_plan.id_for_label }}" class="form-label">
+                            {{ form.next_day_plan.label }}
+                        </label>
+                        {{ form.next_day_plan }}
+                        <small class="form-text text-muted">{{ form.next_day_plan.help_text }}</small>
+                        {% if form.next_day_plan.errors %}
+                        <div class="text-danger">{{ form.next_day_plan.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if is_update %}
+                            💾 Update Report
+                            {% else %}
+                            📤 Submit Report
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">💡 Tips for Daily Reports</h6>
+                <ul class="mb-0">
+                    <li>Be specific about what you accomplished</li>
+                    <li>Mention any blockers early so your manager can help</li>
+                    <li>Keep it concise but informative</li>
+                    <li>You can update your report anytime during the day</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

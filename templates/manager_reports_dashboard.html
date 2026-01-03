@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Team Reports Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">📊 Team Daily Reports Dashboard</h4>
+        </div>
+        <div class="card-body">
+            {% if not has_team %}
+            <div class="alert alert-info">
+                <strong>ℹ️ {{ message }}</strong>
+            </div>
+            {% else %}
+            <!-- Filters -->
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date"
+                        value="{{ selected_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status Filter</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Team Members</option>
+                        <option value="submitted" {% if status_filter=='submitted' %}selected{% endif %}>✅ Submitted
+                            Only</option>
+                        <option value="not_submitted" {% if status_filter=='not_submitted' %}selected{% endif %}>❌ Not
+                            Submitted Only</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                </div>
+            </form>
+
+            <!-- Stats Summary -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Team Members</h6>
+                            <h3 class="mb-0">{{ total_team }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">✅ Submitted</h6>
+                            <h3 class="mb-0">{{ submitted_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">❌ Not Submitted</h6>
+                            <h3 class="mb-0">{{ not_submitted_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Designation</th>
+                            <th>Status</th>
+                            <th>Submitted At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in team_data %}
+                        <tr>
+                            <td>{{ item.employee.employee_id }}</td>
+                            <td>{{ item.employee.full_name }}</td>
+                            <td>{{ item.employee.get_role_display }}</td>
+                            <td>
+                                {% if item.has_submitted %}
+                                <span class="badge bg-success">✅ Submitted</span>
+                                {% else %}
+                                <span class="badge bg-danger">❌ Not Submitted</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.report %}
+                                {{ item.report.submitted_at|date:"h:i A" }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.report %}
+                                <a href="{% url 'view_report_detail' item.report.pk %}" class="btn btn-sm btn-primary">
+                                    👁️ View Report
+                                </a>
+                                {% else %}
+                                <span class="text-muted">No report</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No employees match the selected filter.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

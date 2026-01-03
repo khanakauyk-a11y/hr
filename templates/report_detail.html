@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Report Detail{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">📄 Daily Report Details</h4>
+                <a href="{% url 'manager_reports_dashboard' %}" class="btn btn-sm btn-light">← Back to Dashboard</a>
+            </div>
+            <div class="card-body">
+                <!-- Employee Info -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Employee:</strong> {{ report.employee.full_name }}</p>
+                        <p class="mb-1"><strong>Employee ID:</strong> {{ report.employee.employee_id }}</p>
+                        <p class="mb-1"><strong>Designation:</strong> {{ report.employee.get_role_display }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="mb-1"><strong>Report Date:</strong> {{ report.report_date|date:"F d, Y" }}</p>
+                        <p class="mb-1"><strong>Submitted At:</strong> {{ report.submitted_at|date:"h:i A, M d, Y" }}
+                        </p>
+                        {% if report.updated_at != report.submitted_at %}
+                        <p class="mb-1"><strong>Last Updated:</strong> {{ report.updated_at|date:"h:i A, M d, Y" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Tasks Completed -->
+                <div class="mb-4">
+                    <h5 class="text-primary">✅ Tasks Completed</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ report.tasks_completed }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Challenges -->
+                {% if report.challenges %}
+                <div class="mb-4">
+                    <h5 class="text-warning">⚠️ Challenges / Blockers</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ report.challenges }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Next Day Plan -->
+                {% if report.next_day_plan %}
+                <div class="mb-4">
+                    <h5 class="text-success">📅 Plan for Tomorrow</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ report.next_day_plan }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'manager_reports_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

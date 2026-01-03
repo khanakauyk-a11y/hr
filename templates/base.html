@@ -44,9 +44,13 @@
       <div class="ms-auto d-flex gap-2">
         {% if user.is_authenticated %}
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'dashboard' %}">Dashboard</a>
+        <a class="btn btn-sm btn-outline-info" href="{% url 'submit_daily_report' %}">Submit Daily Report</a>
         {% if user.employee.can_add_employees %}
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'employee_list' %}">Manage Employees</a>
         <a class="btn btn-sm btn-outline-success" href="{% url 'generate_offer_letter' %}">Generate Offer Letter</a>
+        {% endif %}
+        {% if user.employee.subtree_ids|length > 1 %}
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'manager_reports_dashboard' %}">Team Reports</a>
         {% endif %}
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'change_password' %}">Change Password</a>
         <a class="btn btn-sm btn-outline-danger" href="{% url 'logout' %}">Logout</a>
