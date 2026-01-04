@@ -161,6 +161,10 @@ STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
+# Media files (User uploads - offer letters, etc.)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Auth redirects
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"

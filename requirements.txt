@@ -4,6 +4,6 @@ whitenoise==6.8.2
 
 dj-database-url==2.3.0
 psycopg[binary,pool]==3.2.3
+mysqlclient==2.2.0
 
 reportlab==4.2.5
-

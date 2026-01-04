@@ -195,3 +195,51 @@ class DailyReport(models.Model):
     
     def __str__(self):
         return f"{self.employee.full_name} - {self.report_date}"
+
+
+class OfferLetter(models.Model):
+    """Offer letters with approval workflow"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    # Creator
+    created_by = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='created_offer_letters')
+    
+    # Candidate details
+    candidate_name = models.CharField(max_length=200)
+    candidate_email = models.EmailField()
+    designation = models.CharField(max_length=100)
+    designation_display = models.CharField(max_length=200)
+    department = models.CharField(max_length=100)
+    annual_salary = models.CharField(max_length=50)
+    salary_in_words = models.CharField(max_length=200)
+    joining_date = models.CharField(max_length=50)
+    offer_date = models.CharField(max_length=50)
+    reference_number = models.CharField(max_length=100, unique=True)
+    team_details = models.TextField(blank=True)
+    
+    # Approval workflow
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_offer_letters')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+    
+    # PDF storage
+    pdf_file = models.FileField(upload_to='offer_letters/')
+    
+    # Unique token for candidate download (no login required)
+    download_token = models.CharField(max_length=64, unique=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Offer Letter"
+        verbose_name_plural = "Offer Letters"
+    
+    def __str__(self):
+        return f"{self.candidate_name} - {self.designation_display} ({self.status})"
