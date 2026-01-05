@@ -166,6 +166,109 @@ class Employee(models.Model):
         """Check if this employee has any team members (direct or indirect reports)"""
         return len(self.subtree_ids()) > 1  # More than just themselves
 
+    def get_hiring_limits(self) -> dict[str, int]:
+        """
+        Returns dictionary of role-specific hiring limits for this employee's role.
+        Key: subordinate role, Value: max count allowed
+        """
+        limits = {
+            self.Role.SALES_MANAGER: {
+                # SM can hire max 3 AM
+                'ASSISTANT_SALES_MANAGER': 3,
+            },
+            self.Role.ASSISTANT_SALES_MANAGER: {
+                # AM can hire max 1 AM + 2 RM
+                'ASSISTANT_SALES_MANAGER': 1,
+                'AGENT_RELATIONSHIP_MANAGER': 2,
+            },
+            self.Role.AGENT_RELATIONSHIP_MANAGER: {
+                # RM can hire max 2 SE + 1 RM
+                'SALES_EXECUTIVE': 2,
+                'AGENT_RELATIONSHIP_MANAGER': 1,
+            },
+            self.Role.SALES_EXECUTIVE: {
+                # SE can hire max 1 SE + 2 Agents
+                'SALES_EXECUTIVE': 1,
+                'AGENT': 2,
+            },
+        }
+        return limits.get(self.role, {})
+    
+    def get_direct_reports_by_role(self) -> dict[str, int]:
+        """Count direct reports grouped by role"""
+        from django.db.models import Count
+        
+        direct_reports = Employee.objects.filter(reporting_manager_id=self.id).values('role').annotate(
+            count=Count('role')
+        )
+        return {item['role']: item['count'] for item in direct_reports}
+    
+    def can_hire_role(self, target_role: str) -> tuple[bool, str]:
+        """
+        Check if this employee can hire someone with the target_role.
+        Returns (can_hire: bool, error_message: str)
+        """
+        # HR and Admin roles have no restrictions
+        if self.can_access_admin_portal():
+            return (True, "")
+        
+        hiring_limits = self.get_hiring_limits()
+        
+        # Check if this role is allowed to hire the target role at all
+        if target_role not in hiring_limits:
+            allowed_roles = ', '.join([Employee.Role(r).label for r in hiring_limits.keys()])
+            if allowed_roles:
+                return (False, f"{self.get_role_display()} can only hire: {allowed_roles}")
+            else:
+                return (False, f"{self.get_role_display()} cannot hire any subordinates")
+        
+        # Check if hiring limit is reached
+        current_counts = self.get_direct_reports_by_role()
+        current_count = current_counts.get(target_role, 0)
+        max_allowed = hiring_limits[target_role]
+        
+        if current_count >= max_allowed:
+            return (False, f"Hiring limit reached: {self.get_role_display()} can hire max {max_allowed} {Employee.Role(target_role).label}(s), currently has {current_count}")
+        
+        return (True, "")
+    
+    def get_hiring_capacity(self) -> dict[str, any]:
+        """
+        Returns hiring status for this employee.
+        Returns dict with: total_hired, total_capacity, by_role, is_empty, status_text
+        """
+        hiring_limits = self.get_hiring_limits()
+        current_counts = self.get_direct_reports_by_role()
+        
+        total_capacity = sum(hiring_limits.values())
+        total_hired = sum(current_counts.values())
+        
+        by_role = []
+        for role, limit in hiring_limits.items():
+            count = current_counts.get(role, 0)
+            by_role.append({
+                'role': Employee.Role(role).label,
+                'count': count,
+                'limit': limit,
+                'has_capacity': count < limit,
+            })
+        
+        is_empty = total_hired == 0
+        
+        if is_empty:
+            status_text = "Empty"
+        else:
+            status_text = f"{total_hired}/{total_capacity} Hired"
+        
+        return {
+            'total_hired': total_hired,
+            'total_capacity': total_capacity,
+            'by_role': by_role,
+            'is_empty': is_empty,
+            'status_text': status_text,
+            'percentage': int((total_hired / total_capacity * 100)) if total_capacity > 0 else 0,
+        }
+
     def default_password(self) -> str:
         return getattr(settings, "HR_DEFAULT_PASSWORD", "Welcome@123")
 

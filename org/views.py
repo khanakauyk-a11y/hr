@@ -101,7 +101,12 @@ def _build_tree(root: Employee, employees: list[Employee]) -> dict[str, Any]:
 
     def node_for(emp: Employee) -> dict[str, Any]:
         children = [node_for(c) for c in by_manager.get(emp.id, [])]
-        return {"employee": emp, "children": children}
+        hiring_capacity = emp.get_hiring_capacity()
+        return {
+            "employee": emp, 
+            "children": children,
+            "hiring_capacity": hiring_capacity,
+        }
 
     return node_for(root)
 
@@ -168,7 +173,8 @@ def employee_list(request: HttpRequest) -> HttpResponse:
 @can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def employee_create(request: HttpRequest) -> HttpResponse:
-    form = EmployeeCreateForm(request.POST or None)
+    current_employee = request.user.employee
+    form = EmployeeCreateForm(request.POST or None, current_user=current_employee)
     if request.method == "POST" and form.is_valid():
         employee = form.save()
         messages.success(request, f"Created employee {employee.employee_id}.")

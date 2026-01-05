@@ -16,13 +16,31 @@
 
         <hr class="my-3" />
 
-        <div class="muted small">Reporting manager</div>
+        <div class="muted small">Parent Manager</div>
         {% if manager %}
           <div class="fw-semibold">{{ manager.full_name }}</div>
           <div class="text-muted">({{ manager.employee_id }})</div>
         {% else %}
           <div class="text-muted">None</div>
         {% endif %}
+        
+        {% with capacity=employee.get_hiring_capacity %}
+          {% if capacity.total_capacity > 0 %}
+            <hr class="my-3" />
+            <div class="muted small">Your Hiring Capacity</div>
+            <div class="fw-semibold">{{ capacity.status_text }}</div>
+            {% for role_info in capacity.by_role %}
+              <div class="text-muted small">
+                {{ role_info.role }}: {{ role_info.count }}/{{ role_info.limit }}
+                {% if role_info.has_capacity %}
+                  <span class="text-success">✓</span>
+                {% else %}
+                  <span class="text-danger">✗</span>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
       </div>
     </div>
 
@@ -35,7 +53,7 @@
           {% endif %}
         </div>
         <p class="muted mb-3">
-          Managers and team leads can see their own subtree. Regular employees see only themselves and their manager.
+          Managers and team leads can see their own subtree. Regular employees see only themselves and their parent.
         </p>
 
         {% if tree %}

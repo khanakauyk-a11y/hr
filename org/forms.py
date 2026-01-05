@@ -22,11 +22,12 @@ class EmployeeCreateForm(forms.Form):
     employee_id = forms.CharField(label="Employee ID", max_length=150)
     full_name = forms.CharField(max_length=150)
     role = forms.ChoiceField(choices=Employee.Role.choices)
-    reporting_manager = forms.ModelChoiceField(queryset=Employee.objects.none(), required=False)
+    reporting_manager = forms.ModelChoiceField(queryset=Employee.objects.none(), required=False, label="Parent Manager")
     is_active = forms.BooleanField(required=False, initial=True)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.current_user = current_user
         self.fields["reporting_manager"].queryset = Employee.objects.select_related("user").order_by("user__username")
         self.fields["reporting_manager"].empty_label = "(No manager / top-level)"
 
@@ -41,6 +42,19 @@ class EmployeeCreateForm(forms.Form):
         if User.objects.filter(username=employee_id).exists():
             raise forms.ValidationError("Employee ID already exists.")
         return employee_id
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        reporting_manager = cleaned_data.get('reporting_manager')
+        
+        # Validate hiring limits if reporting manager is set
+        if reporting_manager and role:
+            can_hire, error_msg = reporting_manager.can_hire_role(role)
+            if not can_hire:
+                raise forms.ValidationError(error_msg)
+        
+        return cleaned_data
 
     @transaction.atomic
     def save(self) -> Employee:
