@@ -9,33 +9,15 @@ from django.utils import timezone
 
 class Employee(models.Model):
     class Role(models.TextChoices):
-        # Sales Designations
-        SENIOR_SALES_MANAGER = "SENIOR_SALES_MANAGER", "Senior Sales Manager"
+        # Sales Hierarchy
         SALES_MANAGER = "SALES_MANAGER", "Sales Manager"
-        ASSISTANT_SALES_MANAGER = "ASSISTANT_SALES_MANAGER", "Assistant Sales Manager"
-        SALES_EXECUTIVE = "SALES_EXECUTIVE", "Sales Executive"
-        
-        # Agent Designations
-        AGENT_RELATIONSHIP_MANAGER = "AGENT_RELATIONSHIP_MANAGER", "Agent Relationship Manager"
-        AGENT_MANAGER = "AGENT_MANAGER", "Agent Manager"
+        ASSISTANT_MANAGER = "ASSISTANT_MANAGER", "Assistant Manager"
+        RELATIONSHIP_MANAGER = "RELATIONSHIP_MANAGER", "Relationship Manager"
         AGENT = "AGENT", "Agent"
         
-        # HR Designations
+        # HR Roles
         HR_MANAGER = "HR_MANAGER", "HR Manager"
         HR_EXECUTIVE = "HR_EXECUTIVE", "HR Executive"
-        
-        # Management Designations
-        ASSISTANT_GENERAL_MANAGER = "ASSISTANT_GENERAL_MANAGER", "Assistant General Manager"
-        
-        # Support Designations
-        SENIOR_RETAINER = "SENIOR_RETAINER", "Senior Retainer"
-        TELE_CALLER = "TELE_CALLER", "Tele Caller"
-        TRAINER = "TRAINER", "Trainer"
-        
-        # IT Designations
-        IT_MANAGER = "IT_MANAGER", "IT Manager"
-        IT_EXECUTIVE = "IT_EXECUTIVE", "IT Executive"
-        IT_GRAPHIC_DESIGNER = "IT_GRAPHIC_DESIGNER", "IT Graphic Designer"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
     full_name = models.CharField(max_length=150)
@@ -92,44 +74,21 @@ class Employee(models.Model):
     def can_view_subtree(self) -> bool:
         """Manager-level positions can view their organizational subtree"""
         return self.role in {
-            self.Role.SENIOR_SALES_MANAGER,
             self.Role.SALES_MANAGER,
-            self.Role.ASSISTANT_SALES_MANAGER,
-            self.Role.AGENT_RELATIONSHIP_MANAGER,
-            self.Role.AGENT_MANAGER,
+            self.Role.ASSISTANT_MANAGER,
+            self.Role.RELATIONSHIP_MANAGER,
             self.Role.HR_MANAGER,
             self.Role.HR_EXECUTIVE,
-            self.Role.ASSISTANT_GENERAL_MANAGER,
-            self.Role.IT_MANAGER,
         }
     
     def can_add_employees(self) -> bool:
         """Designations with employee management permissions"""
         return self.role in {
-            # Sales Management
-            self.Role.SENIOR_SALES_MANAGER,
             self.Role.SALES_MANAGER,
-            self.Role.ASSISTANT_SALES_MANAGER,
-            self.Role.SALES_EXECUTIVE,  # Added
-            
-            # Agent Management
-            self.Role.AGENT_RELATIONSHIP_MANAGER,
-            self.Role.AGENT_MANAGER,
-            
-            # HR
+            self.Role.ASSISTANT_MANAGER,
+            self.Role.RELATIONSHIP_MANAGER,
             self.Role.HR_MANAGER,
             self.Role.HR_EXECUTIVE,
-            
-            # General Management
-            self.Role.ASSISTANT_GENERAL_MANAGER,
-            
-            # Support
-            self.Role.SENIOR_RETAINER,  # Added
-            
-            # IT Management & Staff
-            self.Role.IT_MANAGER,
-            self.Role.IT_EXECUTIVE,  # Added
-            self.Role.IT_GRAPHIC_DESIGNER,  # Added
         }
 
     def subtree_ids(self) -> set[int]:
@@ -174,22 +133,16 @@ class Employee(models.Model):
         limits = {
             self.Role.SALES_MANAGER: {
                 # SM can hire max 3 AM
-                'ASSISTANT_SALES_MANAGER': 3,
+                'ASSISTANT_MANAGER': 3,
             },
-            self.Role.ASSISTANT_SALES_MANAGER: {
+            self.Role.ASSISTANT_MANAGER: {
                 # AM can hire max 1 AM + 2 RM
-                'ASSISTANT_SALES_MANAGER': 1,
-                'AGENT_RELATIONSHIP_MANAGER': 2,
+                'ASSISTANT_MANAGER': 1,
+                'RELATIONSHIP_MANAGER': 2,
             },
-            self.Role.AGENT_RELATIONSHIP_MANAGER: {
-                # RM can hire max 2 SE + 1 RM
-                'SALES_EXECUTIVE': 2,
-                'AGENT_RELATIONSHIP_MANAGER': 1,
-            },
-            self.Role.SALES_EXECUTIVE: {
-                # SE can hire max 1 SE + 2 Agents
-                'SALES_EXECUTIVE': 1,
-                'AGENT': 2,
+            self.Role.RELATIONSHIP_MANAGER: {
+                # RM can hire max 3 Agents
+                'AGENT': 3,
             },
         }
         return limits.get(self.role, {})

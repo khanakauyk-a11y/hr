@@ -1,128 +1,143 @@
-# Hiring Hierarchy Limits - Implementation Complete
+# Hiring Hierarchy Limits - Simplified
 
 ## Summary
-Successfully implemented hiring hierarchy limits with the following changes:
+Simplified organizational hierarchy with hiring limits enforced.
 
-### Changes Made
+### Roles Available
 
-#### 1. **models.py** - Added Hiring Limit Methods
-- `get_hiring_limits()`: Returns role-specific hiring limits
-- `get_direct_reports_by_role()`: Counts direct reports by role
-- `can_hire_role(role)`: Validates if employee can hire a specific role
-- `get_hiring_capacity()`: Returns hiring status (Empty or X/Y Hired)
-
-**Hiring Limits:**
-- **Sales Manager (SM)**: Can hire max 3 Assistant Managers
-- **Assistant Manager (AM)**: Can hire max 1 AM + 2 Relationship Managers (total 3)
-- **Relationship Manager (RM)**: Can hire max 2 Sales Executives + 1 RM (total 3)
-- **Sales Executive (SE)**: Can hire max 1 SE + 2 Agents (total 3)
-- **HR roles** (HR_MANAGER, HR_EXECUTIVE): No restrictions
+1. **Sales Manager (SM)** - Top sales leadership
+2. **Assistant Manager (AM)** - Mid-level management
+3. **Relationship Manager (RM)** - Client relationship management
+4. **Agent** - Front-line sales staff
+5. **HR Manager** - Human resources leadership
+6. **HR Executive** - HR operations
 
 ---
 
-#### 2. **forms.py** - Added Validation
-- Updated `EmployeeCreateForm` to accept `current_user` parameter
-- Added `clean()` method to validate hiring limits before creating employees
-- Changed label from "Reporting manager" to "Parent Manager"
-- Form will show error if hiring limit is exceeded
+## Hierarchy Structure
+
+```
+HR Manager / HR Executive (No Limits)
+    │
+    └─── Sales Manager (SM)
+             ├─ Can hire: Assistant Manager only
+             └─ Max: 3 AM
+                   │
+                   └─── Assistant Manager (AM)
+                            ├─ Can hire: AM or RM
+                            └─ Max: 1 AM + 2 RM (total 3)
+                                  │
+                                  └─── Relationship Manager (RM)
+                                           ├─ Can hire: Agents only
+                                           └─ Max: 3 Agents
+                                                 │
+                                                 └─── Agent
+                                                      └─ Cannot hire
+```
 
 ---
 
-#### 3. **views.py** - Updated Data Flow
-- Modified `_build_tree()` to include hiring capacity in each node
-- Updated `employee_create()` to pass current user to form for validation
+## Hiring Limits
+
+| Role | Can Hire | Max Limit | Notes |
+|------|----------|-----------|-------|
+| **Sales Manager** | Assistant Manager | 3 AM | Top of sales hierarchy |
+| **Assistant Manager** | AM, RM | 1 AM + 2 RM (3 total) | Can build mixed teams |
+| **Relationship Manager** | Agent | 3 Agents | Manages front-line staff |
+| **Agent** | - | 0 | Cannot hire |
+| **HR Manager** | Anyone | No limit | Admin role |
+| **HR Executive** | Anyone | No limit | Admin role |
 
 ---
 
-#### 4. **templates/org/_tree.html** - Tree Display
-- Added hiring capacity badges to each employee node
-- Color-coded status:
-  - **Gray badge "Empty"**: No subordinates hired
-  - **Green badge**: Less than 50% capacity used
-  - **Orange badge**: 50-99% capacity used  
-  - **Red badge**: At 100% capacity
-- Shows format: "X/Y Hired" (e.g., "2/3 Hired")
+## Status Display
+
+Hiring capacity is shown with color-coded badges:
+
+| Status | Badge | Description |
+|--------|-------|-------------|
+| Empty | Gray | No subordinates hired |
+| X/Y Hired (< 50%) | Green | Good capacity available |
+| X/Y Hired (50-99%) | Orange | Near capacity |
+| X/Y Hired (100%) | Red | At full capacity |
 
 ---
 
-#### 5. **templates/org_chart.html** - Profile Display
-- Changed "Reporting manager" to "Parent Manager"
-- Updated description text to mention "parent"
-- Added "Your Hiring Capacity" section showing:
-  - Overall status (Empty or X/Y Hired)
-  - Breakdown by role with checkmarks/crosses
-  - Only visible to roles that can hire
+## Example Scenarios
+
+### Scenario 1: Sales Manager
+- **Umar (SM)** wants to hire team
+- Can hire: **3 Assistant Managers**
+- Cannot hire: RM or Agents directly
+- Status: "Empty" → "1/3 Hired" → "2/3 Hired" → "3/3 Hired"
+
+### Scenario 2: Assistant Manager
+- **Priya (AM)** reporting to Umar
+- Can hire: **1 AM + 2 RM** (total 3)
+- Cannot hire: Agents directly
+- Possible combinations:
+  - 1 AM + 2 RM ✓
+  - 0 AM + 2 RM ✓
+  - 1 AM + 1 RM ✓
+  - 2 AM + 0 RM ✗ (exceeds AM limit)
+
+### Scenario 3: Relationship Manager
+- **Raj (RM)** reporting to Priya
+- Can hire: **3 Agents**
+- Cannot hire: AM, RM, or other roles
+- Status: "Empty" → "1/3 Hired" → "2/3 Hired" → "3/3 Hired"
 
 ---
 
-## Validation Rules
+## Validation & Error Messages
 
-### Role-Specific Restrictions
-Each role can only hire specific subordinate roles:
+### Exceeded Limits
+```
+✗ "Hiring limit reached: Sales Manager can hire max 3 Assistant Manager(s), currently has 3"
+```
 
-| Parent Role | Can Hire | Max Limits |
-|------------|----------|------------|
-| Sales Manager (SM) | Assistant Manager | 3 AM |
-| Assistant Manager (AM) | AM, Relationship Manager | 1 AM + 2 RM |
-| Relationship Manager (RM) | RM, Sales Executive | 1 RM + 2 SE |
-| Sales Executive (SE) | SE, Agent | 1 SE + 2 Agents |
+### Wrong Role Type
+```
+✗ "Sales Manager can only hire: Assistant Manager"
+```
 
-### Error Messages
-When limits are exceeded, the system shows:
-- "Hiring limit reached: [Role] can hire max X [Target Role](s), currently has Y"
-- "[Role] can only hire: [Allowed Roles]"
-
----
-
-## Testing Guide
-
-### Test Case 1: Hiring Limits
-1. Log in as Sales Manager
-2. Try to add 4th Assistant Manager (should fail)
-3. Verify error message shows the limit
-
-### Test Case 2: Role Restrictions  
-1. Log in as Sales Manager
-2. Try to hire a Sales Executive (should fail)
-3. Verify error shows only AM can be hired
-
-### Test Case 3: Tree Display
-1. Log in as any manager
-2. View org chart
-3. Verify:
-   - Employees with no subordinates show "Empty"
-   - Employees with subordinates show "X/Y Hired"
-   - Color coding is correct
-
-### Test Case 4: Capacity Display
-1. Log in as employee with hiring permissions
-2. View org chart profile panel
-3. Verify "Your Hiring Capacity" section shows:
-   - Current status
-   - Breakdown by role
-   - Checkmarks/crosses for availability
-
-### Test Case 5: HR Bypass
-1. Log in as HR Manager or HR Executive
-2. Verify you can hire any role without restrictions
-3. No hiring limits apply to HR roles
+### No Hiring Permission
+```
+✗ "Agent cannot hire any subordinates"
+```
 
 ---
 
-## Notes
+## Changes from Previous Version
 
-- HR Manager and HR Executive have **no hiring restrictions**
-- Employees without hiring permissions won't see capacity info
-- The term "parent" is used in UI, but internally still uses `reporting_manager`
-- All hiring validation happens at form submission time
-- Tree updates in real-time as employees are added
+**Removed Roles:**
+- ❌ Senior Sales Manager
+- ❌ Assistant Sales Manager
+- ❌ Sales Executive
+- ❌ Agent Relationship Manager (merged to Relationship Manager)
+- ❌ Agent Manager
+- ❌ Assistant General Manager
+- ❌ Senior Retainer
+- ❌ Tele Caller
+- ❌ Trainer
+- ❌ IT Manager
+- ❌ IT Executive
+- ❌ IT Graphic Designer
+
+**Updated Hierarchy:**
+- SM → AM → RM → Agent (simplified 4-level structure)
+- RM now hires Agents directly (no intermediate SE level)
+- AM can hire other AMs for lateral expansion
 
 ---
 
-## Files Modified
+## Testing Checklist
 
-1. `org/models.py` - Added 3 new methods
-2. `org/forms.py` - Updated form validation
-3. `org/views.py` - Updated tree building and employee creation
-4. `templates/org/_tree.html` - Added capacity badges
-5. `templates/org_chart.html` - Added capacity info section
+- [ ] SM can hire max 3 AM
+- [ ] AM can hire 1 AM + 2 RM
+- [ ] RM can hire 3 Agents
+- [ ] Agent cannot hire anyone
+- [ ] HR roles can hire anyone
+- [ ] Tree shows "Empty" or "X/Y Hired"
+- [ ] Color coding works (gray/green/orange/red)
+- [ ] Old roles are no longer available in dropdowns
