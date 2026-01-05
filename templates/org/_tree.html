@@ -1,0 +1,27 @@
+﻿<li>
+  <span class="fw-semibold">{{ node.employee.full_name }}</span>
+  <span class="text-muted">({{ node.employee.employee_id }})</span>
+  <span class="badge text-bg-light border badge-role">{{ node.employee.get_role_display }}</span>
+  
+  {% if node.hiring_capacity.total_capacity > 0 %}
+    {% if node.hiring_capacity.is_empty %}
+      <span class="badge bg-secondary">Empty</span>
+    {% else %}
+      {% if node.hiring_capacity.percentage < 50 %}
+        <span class="badge bg-success">{{ node.hiring_capacity.status_text }}</span>
+      {% elif node.hiring_capacity.percentage < 100 %}
+        <span class="badge bg-warning text-dark">{{ node.hiring_capacity.status_text }}</span>
+      {% else %}
+        <span class="badge bg-danger">{{ node.hiring_capacity.status_text }}</span>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+  
+  {% if node.children %}
+    <ul>
+      {% for child in node.children %}
+        {% include "org/_tree.html" with node=child %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+</li>
