@@ -10,9 +10,10 @@
                 <h4 class="mb-0">📄 Generate Offer Letter</h4>
             </div>
             <div class="card-body">
-                <p class="text-muted mb-4">
-                    Fill in the details below to generate a professional offer letter in PDF format.
-                </p>
+                <div class="alert alert-info mb-4">
+                    <strong>📝 Approval Workflow:</strong> After submitting, your offer letter will be sent to HR for
+                    approval. You'll be able to download it once approved.
+                </div>
 
                 <form method="post">
                     {% csrf_token %}
@@ -52,6 +53,19 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
+                            <label for="{{ form.candidate_email.id_for_label }}" class="form-label">
+                                {{ form.candidate_email.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.candidate_email }}
+                            <small class="form-text text-muted">{{ form.candidate_email.help_text }}</small>
+                            {% if form.candidate_email.errors %}
+                            <div class="text-danger">{{ form.candidate_email.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
                             <label for="{{ form.designation.id_for_label }}" class="form-label">
                                 {{ form.designation.label }} <span class="text-danger">*</span>
                             </label>
@@ -121,8 +135,8 @@
 
                     <div class="d-flex gap-2 justify-content-end mt-4">
                         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            📥 Download Offer Letter (PDF)
+                        <button type="submit" class="btn btn-success">
+                            ✅ Submit for HR Approval
                         </button>
                     </div>
                 </form>
@@ -134,9 +148,10 @@
                 <h6 class="card-title">ℹ️ Important Information</h6>
                 <ul class="mb-0">
                     <li>All fields marked with <span class="text-danger">*</span> are required</li>
-                    <li>The offer letter will be generated based on EASY ONLINE MARKETING template</li>
-                    <li>The PDF will download automatically after you click the button</li>
-                    <li>Validity: 2 days from issue date</li>
+                    <li>The offer letter will be submitted for <strong>HR approval</strong></li>
+                    <li>You can track the status in <strong>"My Offer Letters"</strong> page</li>
+                    <li>Once approved, you can download the PDF from there</li>
+                    <li>The candidate will receive a download link via email</li>
                     <li>HR Contact: hr_shilpisaxena@eomshopping.in</li>
                 </ul>
             </div>
