@@ -128,6 +128,7 @@ class OfferLetterForm(forms.Form):
         label="Offer Letter Date"
     )
     candidate_name = forms.CharField(max_length=150, label="Candidate Full Name")
+    candidate_email = forms.EmailField(label="Candidate Email", help_text="Email for sending the offer letter link")
     designation = forms.ChoiceField(choices=Employee.Role.choices, label="Position/Designation")
     department = forms.CharField(max_length=100, label="Department")
     joining_date = forms.DateField(

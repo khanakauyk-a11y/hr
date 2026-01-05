@@ -48,6 +48,17 @@
         {% if user.employee.can_add_employees %}
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'employee_list' %}">Manage Employees</a>
         <a class="btn btn-sm btn-outline-success" href="{% url 'generate_offer_letter' %}">Generate Offer Letter</a>
+        <a class="btn btn-sm btn-outline-info" href="{% url 'offer_letters_list' %}">My Offer Letters</a>
+        {% endif %}
+        {% if user.employee.can_access_admin_portal %}
+        <a class="btn btn-sm btn-outline-warning" href="{% url 'hr_approval_dashboard' %}">
+          Approve Offer Letters
+          {% with pending_count=user.employee.created_offer_letters.count %}
+          {% if pending_count > 0 %}
+          <span class="badge bg-danger">{{ pending_count }}</span>
+          {% endif %}
+          {% endwith %}
+        </a>
         {% endif %}
         {% if user.employee.has_team_members %}
         <a class="btn btn-sm btn-outline-primary" href="{% url 'manager_reports_dashboard' %}">Team Reports</a>

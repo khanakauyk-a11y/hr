@@ -19,8 +19,15 @@ urlpatterns = [
     path("admin/employees/<int:pk>/delete/", views.employee_delete, name="employee_delete"),
     path("admin/employees/<int:pk>/reset-password/", views.employee_reset_password, name="employee_reset_password"),
     
-    # Offer Letter
+    # Offer Letter Approval Workflow
     path("offer-letter/generate/", views.generate_offer_letter, name="generate_offer_letter"),
+    path("offer-letters/", views.offer_letters_list, name="offer_letters_list"),
+    path("offer-letters/approve/", views.hr_approval_dashboard, name="hr_approval_dashboard"),
+    path("offer-letters/<int:pk>/approve/", views.approve_offer_letter, name="approve_offer_letter"),
+    path("offer-letters/<int:pk>/reject/", views.reject_offer_letter, name="reject_offer_letter"),
+    path("offer-letters/<int:pk>/download/", views.download_offer_letter, name="download_offer_letter"),
+    # Public candidate download (no login required)
+    path("offer/<str:token>/", views.candidate_download_page, name="candidate_download"),
     
     # Daily Reports
     path("report/submit/", views.submit_daily_report, name="submit_daily_report"),

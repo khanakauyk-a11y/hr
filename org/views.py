@@ -258,29 +258,61 @@ def employee_reset_password(request: HttpRequest, pk: int) -> HttpResponse:
 @can_add_employees_required
 @require_http_methods(["GET", "POST"])
 def generate_offer_letter(request: HttpRequest) -> HttpResponse:
-    """Generate offer letter form and PDF download"""
+    """Generate offer letter and save for HR approval"""
+    from django.core.files.base import ContentFile
+    import secrets
+    
     if request.method == "POST":
         form = OfferLetterForm(request.POST)
         if form.is_valid():
+            from .models import OfferLetter
+            
             # Prepare data for PDF generation
             data = form.cleaned_data.copy()
             # Get designation display name
             designation_choices = dict(Employee.Role.choices)
             data['designation_display'] = designation_choices.get(data['designation'], data['designation'])
-            # Format dates
-            data['offer_date'] = data['offer_date'].strftime('%d-%m-%Y')
-            data['joining_date'] = data['joining_date'].strftime('%B %Y')
-            # Format salary
-            data['annual_salary'] = f"{data['annual_salary']:,.2f}"
+            
+            # Store original values before formatting
+            original_offer_date = data['offer_date']
+            original_joining_date = data['joining_date']
+            original_salary = data['annual_salary']
+            
+            # Format for PDF
+            data['offer_date'] = original_offer_date.strftime('%d-%m-%Y')
+            data['joining_date'] = original_joining_date.strftime('%B %Y')
+            data['annual_salary'] = f"{original_salary:,.2f}"
             
             # Generate PDF
-            pdf = generate_offer_letter_pdf(data)
+            pdf_content = generate_offer_letter_pdf(data)
             
-            # Return PDF as download
-            response = HttpResponse(pdf, content_type='application/pdf')
-            filename = f"Offer_Letter_{data['candidate_name'].replace(' ', '_')}.pdf"
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
+            # Create OfferLetter record
+            offer_letter = OfferLetter(
+                created_by=request.user.employee,
+                candidate_name=form.cleaned_data['candidate_name'],
+                candidate_email=form.cleaned_data.get('candidate_email', ''),
+                designation=form.cleaned_data['designation'],
+                designation_display=data['designation_display'],
+                department=form.cleaned_data['department'],
+                annual_salary=f"{original_salary:,.2f}",
+                salary_in_words=form.cleaned_data['salary_in_words'],
+                joining_date=original_joining_date.strftime('%B %Y'),
+                offer_date=original_offer_date.strftime('%d-%m-%Y'),
+                reference_number=form.cleaned_data['reference_number'],
+                team_details=form.cleaned_data.get('team_details', ''),
+                download_token=secrets.token_urlsafe(32),
+                status='pending'
+            )
+            
+            # Save PDF file
+            filename = f"{form.cleaned_data['reference_number']}_{form.cleaned_data['candidate_name'].replace(' ', '_')}.pdf"
+            offer_letter.pdf_file.save(filename, ContentFile(pdf_content), save=True)
+            
+            messages.success(
+                request, 
+                f"Offer letter for {form.cleaned_data['candidate_name']} has been submitted for HR approval."
+            )
+            return redirect("offer_letters_list")
     else:
         form = OfferLetterForm()
     
@@ -397,3 +429,77 @@ def view_report_detail(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("manager_reports_dashboard")
     
     return render(request, "report_detail.html", {"report": report})
+
+
+# ==================== OFFER LETTER APPROVAL WORKFLOW ====================
+
+from django.http import FileResponse
+
+@can_add_employees_required
+def offer_letters_list(request):
+    from .models import OfferLetter
+    current_employee = request.user.employee
+    offer_letters = OfferLetter.objects.filter(created_by=current_employee).order_by('-created_at')
+    return render(request, 'offer_letters_list.html', {'offer_letters': offer_letters})
+
+@admin_required
+def hr_approval_dashboard(request):
+    from .models import OfferLetter
+    status_filter = request.GET.get('status', 'pending')
+    if status_filter == 'all':
+        offer_letters = OfferLetter.objects.all()
+    else:
+        offer_letters = OfferLetter.objects.filter(status=status_filter)
+    offer_letters = offer_letters.select_related('created_by__user', 'approved_by__user').order_by('-created_at')
+    pending_count = OfferLetter.objects.filter(status='pending').count()
+    approved_count = OfferLetter.objects.filter(status='approved').count()
+    rejected_count = OfferLetter.objects.filter(status='rejected').count()
+    return render(request, 'hr_approval_dashboard.html', {
+        'offer_letters': offer_letters, 'status_filter': status_filter, 
+        'pending_count': pending_count, 'approved_count': approved_count, 'rejected_count': rejected_count
+    })
+
+@admin_required
+@require_http_methods(['POST'])
+def approve_offer_letter(request, pk):
+    from .models import OfferLetter
+    from django.utils import timezone
+    offer_letter = get_object_or_404(OfferLetter, pk=pk)
+    offer_letter.status = 'approved'
+    offer_letter.approved_by = request.user.employee
+    offer_letter.approved_at = timezone.now()
+    offer_letter.save()
+    messages.success(request, f'Offer letter for {offer_letter.candidate_name} has been approved.')
+    return redirect('hr_approval_dashboard')
+
+@admin_required
+@require_http_methods(['POST'])
+def reject_offer_letter(request, pk):
+    from .models import OfferLetter
+    offer_letter = get_object_or_404(OfferLetter, pk=pk)
+    rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
+    offer_letter.status = 'rejected'
+    offer_letter.rejection_reason = rejection_reason
+    offer_letter.save()
+    messages.warning(request, f'Offer letter for {offer_letter.candidate_name} has been rejected.')
+    return redirect('hr_approval_dashboard')
+
+@employee_required
+def download_offer_letter(request, pk):
+    from .models import OfferLetter
+    offer_letter = get_object_or_404(OfferLetter, pk=pk)
+    current_employee = request.user.employee
+    can_download = (current_employee.can_access_admin_portal() or (offer_letter.created_by == current_employee and offer_letter.status == 'approved'))
+    if not can_download:
+        messages.error(request, 'You don\'t have permission to download this offer letter.')
+        return redirect('offer_letters_list')
+    return FileResponse(offer_letter.pdf_file, as_attachment=True, filename=f'Offer_Letter_{offer_letter.candidate_name}.pdf')
+
+def candidate_download_page(request, token):
+    from .models import OfferLetter
+    offer_letter = get_object_or_404(OfferLetter, download_token=token)
+    if offer_letter.status != 'approved':
+        return render(request, 'candidate_download_error.html', {'message': 'This offer letter is pending approval and cannot be downloaded yet.'})
+    if request.GET.get('download') == '1':
+        return FileResponse(offer_letter.pdf_file, as_attachment=True, filename=f'Offer_Letter_{offer_letter.candidate_name}.pdf')
+    return render(request, 'candidate_download_page.html', {'offer_letter': offer_letter})
