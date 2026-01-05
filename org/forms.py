@@ -154,6 +154,16 @@ class OfferLetterForm(forms.Form):
         help_text="Optional: Team management responsibilities"
     )
     
+    def clean_reference_number(self):
+        """Validate that the reference number is unique"""
+        from .models import OfferLetter
+        reference_number = self.cleaned_data.get('reference_number')
+        if OfferLetter.objects.filter(reference_number=reference_number).exists():
+            raise forms.ValidationError(
+                'This reference number is already in use. Please use a unique reference number.'
+            )
+        return reference_number
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Set default date if not provided
