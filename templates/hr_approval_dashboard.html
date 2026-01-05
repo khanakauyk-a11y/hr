@@ -66,6 +66,9 @@
                             </td>
                             <td>
                                 {% if letter.status == 'pending' %}
+                                <a href="{% url 'download_offer_letter' letter.pk %}" class="btn btn-sm btn-outline-info me-1" target="_blank">
+                                    Preview PDF
+                                </a>
                                 <form method="post" action="{% url 'approve_offer_letter' letter.pk %}"
                                     style="display:inline;">
                                     {% csrf_token %}
