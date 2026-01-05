@@ -1,5 +1,5 @@
 """
-Utility module for generating offer letter PDFs with company branding - Exact Template Match
+Utility module for generating appointment letter PDFs with company branding - Updated Format
 """
 import os
 from io import BytesIO
@@ -14,10 +14,10 @@ from django.conf import settings
 
 def generate_offer_letter_pdf(data):
     """
-    Generate offer letter PDF from form data with exact company template formatting
+    Generate appointment letter PDF from form data with company template formatting
     
     Args:
-        data: Dictionary containing offer letter information
+        data: Dictionary containing appointment letter information
         
     Returns:
         BytesIO buffer containing the PDF
@@ -36,12 +36,10 @@ def generate_offer_letter_pdf(data):
     header_path = os.path.join(base_dir, 'header.png')
     footer_path = os.path.join(base_dir, 'foter.png')
     sign_path = os.path.join(base_dir, 'sign.png')
-    location_icon_path = os.path.join(base_dir, 'image_above_left.png')
     
     # Add header image if exists
     if os.path.exists(header_path):
         try:
-            # Header with logo and colorful design
             header_img = Image(header_path, width=6.5*inch, height=0.6*inch)
             elements.append(header_img)
             elements.append(Spacer(1, 6))
@@ -83,67 +81,119 @@ def generate_offer_letter_pdf(data):
         alignment=TA_RIGHT
     )
     
-    # Reference number and date (underlined)
-    ref_text = f'<u><b>{data["reference_number"]}</b></u>'
-    date_text = f'<u>-- /{data["offer_date"]}</u>'
+    bold_style = ParagraphStyle(
+        'BoldStyle',
+        parent=normal_style,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Reference number and date
+    ref_text = f'<b>{data["reference_number"]}</b>'
+    date_text = f'{data["offer_date"]}'
     
     ref_table = Table([[Paragraph(ref_text, left_style), Paragraph(date_text, right_style)]], 
                       colWidths=[3.5*inch, 3*inch])
     elements.append(ref_table)
     elements.append(Spacer(1, 24))
     
-    # Candidate name (underlined)
-    elements.append(Paragraph(f'<u>Mr. {data["candidate_name"]}</u>', left_style))
+    # Candidate name
+    elements.append(Paragraph(f'Ms. {data["candidate_name"]}', left_style))
     elements.append(Spacer(1, 36))
     
-    # Title
-    elements.append(Paragraph('<b><u>Offer Letter</u></b>', title_style))
+    # Title - APPOINTMENT LETTER
+    elements.append(Paragraph('<b><u>APPOINTMENT LETTER</u></b>', title_style))
     elements.append(Spacer(1, 12))
     
-    # Greeting (Bold)
-    elements.append(Paragraph(f'<b>Dear. {data["candidate_name"].split()[0]},</b>', normal_style))
+    # Greeting
+    elements.append(Paragraph(f'Dear Ms. {data["candidate_name"].split()[0]},', normal_style))
     elements.append(Spacer(1, 12))
     
-    # Main content paragraph 1 with underlines
-    para1 = f'''This is Reference to your application and Subsequent interviews you had with us. We are pleased to offer you the position of <u><b>{data["designation_display"]}</b></u> in <u><b>{data["department"]}</b></u> with effect from <u><b>{data["joining_date"]}</b></u>, on the terms and conditions as mutually agreed upon at the time of interview.'''
+    # Main content paragraph
+    para1 = f'''This is with reference to your application and the subsequent discussions you had with us. We are pleased to appointment you the position of <b>{data["designation_display"]} – Department Retainer Sales & Marketing</b>, effective <b>{data["joining_date"]}</b>, on the terms and conditions mutually agreed upon during the interview process.'''
     elements.append(Paragraph(para1, normal_style))
     elements.append(Spacer(1, 12))
     
-    # Team details if provided
-    if data.get('team_details'):
-        para2 = f'<b>As per discussion:</b>- {data["team_details"]}'
-        elements.append(Paragraph(para2, normal_style))
-        elements.append(Spacer(1, 12))
-    
-    # Salary information (underlined and bold)
-    salary_para = f'''As discussed, your annual Income would be Rupees <u><b>{data["annual_salary"]}/- ({data["salary_in_words"]})</b></u>'''
+    # Salary information
+    salary_para = f'''As discussed, your annual Amount would be Rupees <b>{data["annual_salary"]}/- ({data["salary_in_words"]})</b>'''
     elements.append(Paragraph(salary_para, normal_style))
+    elements.append(Spacer(1, 12))
+    
+    # Role & Responsibilities section
+    elements.append(Paragraph('<b><u>Role & Responsibilities:</u></b>', bold_style))
+    elements.append(Spacer(1, 6))
+    
+    role_para = '''In this role, you will be responsible for recruiting direct reportees and supporting structured team expansion through effective leadership. Over a period of time, you will be expected to manage and supervise a team strength of 40–50 members.'''
+    elements.append(Paragraph(role_para, normal_style))
+    elements.append(Spacer(1, 12))
+    
+    # Performance Expectations section
+    elements.append(Paragraph('<b><u>Performance Expectations:</u></b>', bold_style))
+    elements.append(Spacer(1, 6))
+    
+    perf_intro = 'As discussed, during the initial phase you will be expected to:'
+    elements.append(Paragraph(perf_intro, normal_style))
+    
+    # Bullet points for performance expectations
+    bullet_style = ParagraphStyle(
+        'Bullet',
+        parent=normal_style,
+        leftIndent=20,
+        bulletIndent=10
+    )
+    
+    perf_points = [
+        'Recruit a minimum of 3 candidates as per business requirements (positions will be communicated from time to time).',
+        'Close at least 1 sale within the first 2 working days of joining.',
+        'Achieve a minimum of 4 sales per month, which will remain mandatory until the team reaches its planned strength.'
+    ]
+    
+    for point in perf_points:
+        elements.append(Paragraph(f'• {point}', bullet_style))
+    
+    elements.append(Spacer(1, 12))
+    
+    # Leave/Holidays section
+    elements.append(Paragraph('<b>Leave/Holidays</b>', bold_style))
+    elements.append(Spacer(1, 6))
+    
+    leave_points = [
+        'You are entitled to no casual leave of day.',
+        'You are entitled to working days of no paid sick leave.',
+        'The Company will inform you in advance about the list of each declared holiday.'
+    ]
+    
+    for point in leave_points:
+        elements.append(Paragraph(f'• {point}', bullet_style))
+    
     elements.append(Spacer(1, 24))
     
-    # Probation period
-    probation_para = '''You will be on probation for a period of six months at the end of which provided your performance has been found satisfactory you may be confirmed as an employee in the company.'''
-    elements.append(Paragraph(probation_para, normal_style))
+    # Department and probation paragraph
+    dept_para = '''The department concerned shall be known as Retainer Sales & Marketing and all individuals joining this department shall be bound to comply with all departmental terms and conditions. You shall be on a probationary period of six (6) months, upon completion of which, subject to your performance being found satisfactory, you may, at the sole discretion of the Company, be confirmed as an employee or a permanent employee.'''
+    elements.append(Paragraph(dept_para, normal_style))
+    elements.append(Spacer(1, 12))
     
-    # Confidentiality (with underlines)
-    conf_para = '''You <u>will be required to enter into a Confidentiality Agreement with the Company and provide the accurate</u> information to <u>be filled in</u> your joining form, sending along with your offer letter.'''
+    # Confidentiality paragraph
+    conf_para = '''You will be required to enter into a Confidentiality Agreement with the Company and provide accurate information to be filled in your joining form, sending along with your appointment letter.'''
     elements.append(Paragraph(conf_para, normal_style))
     elements.append(Spacer(1, 12))
     
-    # Acceptance instructions with underlined email
-    accept_para = f'''Please sign a duplicate copy of this letter and fill the joining form as a token of your acceptance and send the same email id <u><b>hr_shilpisaxena@eomshopping.in</b></u> (HR Team) <u>back</u> to us. The offer letter and joining kit <u>will</u> valid for 2 days only from the day the <u>it</u> is issued.'''
+    # Joining kit submission paragraph
+    submit_para = '''All applicable terms and conditions are detailed in the joining kit. Submission of the duly filled joining kit along with the signed appointment letter shall be mandatory, and only upon receipt of both shall the appointment be deemed to have been accepted.'''
+    elements.append(Paragraph(submit_para, normal_style))
+    elements.append(Spacer(1, 12))
+    
+    # Acceptance instructions
+    accept_para = f'''Please <b>sign</b> a duplicate copy of this letter and fill the joining form as a token of your acceptance and send the same email id <u><b>hr_vanshika@eomshopping.in</b></u> (HR Manager) back to us. The letter and joining kit will be valid for 2 days only from the day it is issued.'''
     elements.append(Paragraph(accept_para, normal_style))
     elements.append(Spacer(1, 12))
     
     # Welcome message
-    welcome_para = '''We Welcome you and look forward for your arrival in <b>EASY ONLINE MARKETING</b>.'''
+    welcome_para = '''We Welcome you and look forward for your arrival in EASY ONLINE MARKETING.'''
     elements.append(Paragraph(welcome_para, normal_style))
     elements.append(Paragraph('Thanking You Sincerely', normal_style))
     elements.append(Spacer(1, 12))
     
     # Signature section
-    sig_elements = []
-    
-    # Left side - Company signature with stamp
     left_content = [
         [Paragraph('For <b>EASY ONLINE MARKETING</b>', left_style)],
         [Spacer(1, 6)],
@@ -172,7 +222,7 @@ def generate_offer_letter_pdf(data):
     right_content = [
         [Paragraph('I accept the terms and conditions', right_style_center)],
         [Spacer(1, 60)],
-        [Paragraph('<u><b>Name(Change)</b></u>', right_style_center)],
+        [Paragraph('<b>Sample</b>', right_style_center)],
         [Paragraph('<b>Signature of Applicant</b>', right_style_center)],
     ]
     
@@ -204,20 +254,9 @@ def generate_offer_letter_pdf(data):
             footer_img = Image(footer_path, width=6.5*inch, height=0.8*inch)
             elements.append(footer_img)
         except:
-            # Fallback: Add location icon and address text
-            footer_elements = []
-            
-            # Location icon if exists
-            if os.path.exists(location_icon_path):
-                try:
-                    location_img = Image(location_icon_path, width=0.3*inch, height=0.3*inch)
-                    footer_elements.append(location_img)
-                    footer_elements.append(Spacer(1, 6))
-                except:
-                    pass
-            
-            # Address text
-            footer_text = '''8119, 8th Floor, Gaur City Office Mall, Sector – 4 Greater Noida West, Gautam Buddha Nagar Uttar Pradesh – 201306, India'''
+            # Fallback footer
+            footer_text = '''+91116926170 | info@eomshopping.in | info2@eomshopping.com<br/>
+            8119, 8th Floor, Gaur City Office Mall, Sector – 4 Greater Noida West, Gautam Buddha Nagar Uttar Pradesh – 201306, India'''
             footer_style = ParagraphStyle(
                 'Footer',
                 parent=styles['Normal'],
@@ -225,10 +264,7 @@ def generate_offer_letter_pdf(data):
                 alignment=TA_CENTER,
                 textColor=colors.HexColor('#666666')
             )
-            footer_elements.append(Paragraph(footer_text, footer_style))
-            
-            for elem in footer_elements:
-                elements.append(elem)
+            elements.append(Paragraph(footer_text, footer_style))
     
     # Build PDF
     doc.build(elements)
