@@ -462,14 +462,61 @@ def hr_approval_dashboard(request):
 @admin_required
 @require_http_methods(['POST'])
 def approve_offer_letter(request, pk):
-    from .models import OfferLetter
+    from .models import OfferLetter, Employee
     from django.utils import timezone
+    from django.contrib.auth.models import User
+    from django.db import transaction
+    
     offer_letter = get_object_or_404(OfferLetter, pk=pk)
-    offer_letter.status = 'approved'
-    offer_letter.approved_by = request.user.employee
-    offer_letter.approved_at = timezone.now()
-    offer_letter.save()
-    messages.success(request, f'Offer letter for {offer_letter.candidate_name} has been approved.')
+    
+    # Check if already approved (prevent duplicate employee creation)
+    if offer_letter.status == 'approved':
+        messages.warning(request, f'Offer letter for {offer_letter.candidate_name} is already approved.')
+        return redirect('hr_approval_dashboard')
+    
+    try:
+        with transaction.atomic():
+            # Generate unique employee ID
+            last_employee = Employee.objects.order_by('-employee_id').first()
+            if last_employee and last_employee.employee_id.isdigit():
+                new_employee_id = str(int(last_employee.employee_id) + 1)
+            else:
+                # Start from 1007 if no numeric IDs exist
+                new_employee_id = "1007"
+            
+            # Create User account
+            username = new_employee_id
+            user = User.objects.create_user(
+                username=username,
+                password=settings.HR_DEFAULT_PASSWORD,
+                first_name=offer_letter.candidate_name.split()[0] if offer_letter.candidate_name else "",
+                last_name=" ".join(offer_letter.candidate_name.split()[1:]) if len(offer_letter.candidate_name.split()) > 1 else ""
+            )
+            
+            # Create Employee record
+            employee = Employee.objects.create(
+                user=user,
+                employee_id=new_employee_id,
+                full_name=offer_letter.candidate_name,
+                email=offer_letter.candidate_email,
+                role=offer_letter.designation,  # Use designation from offer letter
+                reporting_manager=offer_letter.created_by,  # Report to the manager who created the offer
+                date_of_joining=timezone.now().date()
+            )
+            
+            # Approve the offer letter
+            offer_letter.status = 'approved'
+            offer_letter.approved_by = request.user.employee
+            offer_letter.approved_at = timezone.now()
+            offer_letter.save()
+            
+            messages.success(
+                request, 
+                f'Offer letter approved! Employee {employee.full_name} (ID: {new_employee_id}) has been added under {offer_letter.created_by.full_name}.'
+            )
+    except Exception as e:
+        messages.error(request, f'Error creating employee: {str(e)}')
+    
     return redirect('hr_approval_dashboard')
 
 @admin_required
